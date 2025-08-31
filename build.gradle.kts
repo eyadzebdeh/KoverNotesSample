@@ -29,34 +29,32 @@ val onlyDiffFlag = (project.findProperty("only_diff_files") as? String)?.toBoole
 extra["koverOnlyDiffFiles"] = onlyDiffFlag ?: false
 
 fun computeDiffIncludedClasses(): List<String> {
-    // Run: git diff --name-only main
-    val process = try {
-        ProcessBuilder(listOf("git", "diff", "--name-only", "main"))
-            .redirectErrorStream(true)
-            .start()
+    val out = java.io.ByteArrayOutputStream()
+    try {
+        // Compare current branch to main; prefer origin/main if available
+        exec {
+            // Using triple-dot: changes unique to the current branch compared to main
+            commandLine("git", "diff", "--name-only", "--diff-filter=d", "origin/main")
+            standardOutput = out
+            isIgnoreExitValue = true
+        }
     } catch (_: Exception) {
         return emptyList()
     }
-    val out = process.inputStream.bufferedReader().readText()
-    // Don't fail build if git returns non-zero; just treat as no diff
-    val files = out.lineSequence()
-        .map { it.trim() }
+    val files = out.toString().lines()
+        .filter { it.isNotBlank() }
         .filter { it.endsWith(".kt") }
-        .toList()
-    if (files.isEmpty()) return emptyList()
-
-    val names = files.map { java.io.File(it).nameWithoutExtension }.distinct()
-    // Build broad glob patterns to catch class files generated from Kotlin sources
-    val patterns = mutableSetOf<String>()
-    names.forEach { base ->
-        // Match classes and companion/object/etc. generated from this file name
-        patterns += "*${'$'}base*"
-        // Also include top-level file classes like FooKt
-        patterns += "*${'$'}{base}Kt*"
-        // And any FQN form with a dot before name
-        patterns += "*.${'$'}base*"
-    }
-    return patterns.toList()
+        .mapNotNull {
+            it.split(delimiters = arrayOf("kotlin/", "java/")).lastOrNull()
+                ?.split(".")
+                ?.firstOrNull()
+                ?.replace("/", ".")
+        }
+        .ifEmpty {
+            listOf("")
+        }
+    return files
 }
 
-extra["koverDiffIncludedClasses"] = if (extra["koverOnlyDiffFiles"] as Boolean) computeDiffIncludedClasses() else emptyList<String>()
+extra["koverDiffIncludedClasses"] =
+    if (extra["koverOnlyDiffFiles"] as Boolean) computeDiffIncludedClasses() else emptyList<String>()
