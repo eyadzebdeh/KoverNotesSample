@@ -1,0 +1,48 @@
+name: Android Build & Test Coverage
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # Set up the JDK and cache Gradle dependencies
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: gradle
+
+      - name: Set up Gradle
+        uses: gradle/gradle-build-action@v2
+        with:
+          cache-disabled: false
+
+      # Build the project and run unit tests
+      - name: Build and run unit tests
+        run: ./gradlew build
+
+      # Run Kover verification to enforce coverage thresholds on changed files
+      - name: Run Kover verification
+        run: ./gradlew koverVerify -P line_coverage=80 -P branch_coverage=70 -P only_diff_files=true
+
+      # Generate the HTML coverage report regardless of verification outcome
+      - name: Generate Kover HTML report
+        if: always()
+        run: ./gradlew koverHtmlReport -P only_diff_files=true
+
+      # Upload the coverage report as an artifact so it can be viewed from the PR
+      - name: Upload coverage report artifact
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: kover-html-report
+          path: |
+            **/build/reports/kover/html
