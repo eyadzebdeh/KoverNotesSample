@@ -34,11 +34,19 @@ val koverExcludedPackages = rootProject.extra["koverExcludedPackages"] as List<S
 val koverExcludedClasses = rootProject.extra["koverExcludedClasses"] as List<String>
 val koverMinLine = rootProject.extra["koverMinLine"] as Int
 val koverMinBranch = rootProject.extra["koverMinBranch"] as Int
+val koverOnlyDiffFiles = rootProject.extra["koverOnlyDiffFiles"] as Boolean
+@Suppress("UNCHECKED_CAST")
+val koverDiffIncludedClasses = rootProject.extra["koverDiffIncludedClasses"] as List<String>
 
 kover {
     reports {
         total {
             filters {
+                if (koverOnlyDiffFiles && koverDiffIncludedClasses.isNotEmpty()) {
+                    includes {
+                        classes(*koverDiffIncludedClasses.toTypedArray())
+                    }
+                }
                 excludes {
                     androidGeneratedClasses()
                     annotatedBy("*Generated*")

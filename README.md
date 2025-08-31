@@ -51,6 +51,11 @@ Shared coverage configuration (exclusion lists and thresholds) is defined once i
 - Thresholds are provided via:
   - `extra["koverMinLine"]` and `extra["koverMinBranch"]`
   - These can be supplied at invocation time, e.g.: `-P line_coverage=80 -P branch_coverage=70`
+- Diff-only coverage option:
+  - `extra["koverOnlyDiffFiles"]` (driven by Gradle property `-P only_diff_files=true`)
+  - When enabled, Kover will include only classes corresponding to files changed on the current branch vs `main`.
+    - Implementation uses `git diff --name-only origin/main...HEAD` to detect changed Kotlin files and derives class globs from filenames.
+    - If git is unavailable or no changed Kotlin files are detected, no classes are included (coverage may be zero).
 
 Kover-enabled modules (app, core:impl, feature:addnote, feature:noteslist) consume these values and apply the same filters and verify rules. API and fake modules do not apply the Kover plugin.
 
@@ -58,6 +63,24 @@ Common exclusions include:
 - Generated DI artifacts (Hilt): `hilt_aggregated_deps.*`, `*_Factory`, `*Dagger*`, `*_Hilt*`, `*HiltWrapper*`, `*.*_HiltModules*`
 - Android boilerplate: `BuildConfig`, `*App`, `*ActivityKt*`, `*ComposableSingletons*`
 - Compose screen files and DI modules: `feature.*.*ScreenKt`, `**.di.*`
+
+## Coverage commands: diff vs no-diff
+
+Full project (no diff filtering):
+- HTML report (all Kover-enabled modules):
+  - `./gradlew koverHtmlReport`
+- Verify with thresholds (example 80% lines, 70% branches):
+  - `./gradlew koverVerify -P line_coverage=80 -P branch_coverage=70`
+
+Only changed files (diff vs main):
+- HTML report for only changed Kotlin files:
+  - `./gradlew koverHtmlReport -P only_diff_files=true`
+- Verify only changed files with thresholds:
+  - `./gradlew koverVerify -P only_diff_files=true -P line_coverage=80 -P branch_coverage=70`
+
+Notes:
+- Diff detection uses `git diff --name-only origin/main...HEAD`. If `origin/main` isn’t available locally or no Kotlin files changed, the include set may be empty and coverage can be zero.
+- Exclusion filters still apply in both modes.
 
 ## Tests
 - Repository implementation: `InMemoryNoteRepositoryTest`
