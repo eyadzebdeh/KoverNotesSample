@@ -1,48 +1,68 @@
-name: Android Build & Test Coverage
+name: CI • Build, Test & Kover
 
 on:
   pull_request:
-    branches:
-      - main
+    branches: [ main ]
 
 jobs:
-  build:
+  build-and-coverage:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-
-      # Set up the JDK and cache Gradle dependencies
-      - name: Set up JDK
-        uses: actions/setup-java@v3
+      - name: Checkout
+        uses: actions/checkout@v4
         with:
-          distribution: 'temurin'
+          # Needed so Gradle's git diff logic can compare against origin/main
+          fetch-depth: 0
+
+      - name: Fetch origin/main for diff
+        run: git fetch origin main:refs/remotes/origin/main
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
           java-version: '17'
-          cache: gradle
 
-      - name: Set up Gradle
-        uses: gradle/gradle-build-action@v2
-        with:
-          cache-disabled: false
+      - name: Set up Gradle (cache)
+        uses: gradle/actions/setup-gradle@v3
 
-      # Build the project and run unit tests
-      - name: Build and run unit tests
-        run: ./gradlew build
+      - name: Make Gradle wrapper executable (Linux)
+        run: chmod +x ./gradlew
 
-      # Run Kover verification to enforce coverage thresholds on changed files
-      - name: Run Kover verification
-        run: ./gradlew koverVerify -P line_coverage=80 -P branch_coverage=70 -P only_diff_files=true
+      # Full build runs unit tests and fails the job if tests fail
+      - name: Build + unit tests
+        run: ./gradlew build --stacktrace
 
-      # Generate the HTML coverage report regardless of verification outcome
-      - name: Generate Kover HTML report
+      # Enforce coverage thresholds on changed files only
+      - name: Kover verify (diff-only)
+        run: ./gradlew koverVerify -P line_coverage=80 -P branch_coverage=70 -P only_diff_files=true --stacktrace
+
+      # Always produce the HTML report so you can inspect it even on failures
+      - name: Generate Kover HTML (diff-only)
         if: always()
-        run: ./gradlew koverHtmlReport -P only_diff_files=true
+        run: ./gradlew koverHtmlReport -P only_diff_files=true --stacktrace
 
-      # Upload the coverage report as an artifact so it can be viewed from the PR
-      - name: Upload coverage report artifact
+      # Upload Kover HTML reports (for all modules)
+      - name: Upload Kover HTML artifact
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: kover-html-report
           path: |
-            **/build/reports/kover/html
+            **/build/reports/kover/html/**
+          if-no-files-found: warn
+          retention-days: 7
+
+      # (Optional but handy) Upload JUnit & test reports too
+      - name: Upload unit test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: junit-test-reports
+          path: |
+            **/build/reports/tests/**/*
+            **/build/test-results/**/*
+          if-no-files-found: warn
+          retention-days: 7
