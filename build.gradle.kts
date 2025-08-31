@@ -34,7 +34,7 @@ fun computeDiffIncludedClasses(): List<String> {
         // Compare current branch to main; prefer origin/main if available
         exec {
             // Using triple-dot: changes unique to the current branch compared to main
-            commandLine("git", "diff", "--name-only", "origin/main...HEAD")
+            commandLine("git", "diff", "--name-only", "main")
             standardOutput = out
             isIgnoreExitValue = true
         }
