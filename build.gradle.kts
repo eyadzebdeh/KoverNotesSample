@@ -29,19 +29,17 @@ val onlyDiffFlag = (project.findProperty("only_diff_files") as? String)?.toBoole
 extra["koverOnlyDiffFiles"] = onlyDiffFlag ?: false
 
 fun computeDiffIncludedClasses(): List<String> {
-    val out = java.io.ByteArrayOutputStream()
-    try {
-        // Compare current branch to main; prefer origin/main if available
-        exec {
-            // Using triple-dot: changes unique to the current branch compared to main
-            commandLine("git", "diff", "--name-only", "main")
-            standardOutput = out
-            isIgnoreExitValue = true
-        }
+    // Run: git diff --name-only main
+    val process = try {
+        ProcessBuilder(listOf("git", "diff", "--name-only", "main"))
+            .redirectErrorStream(true)
+            .start()
     } catch (_: Exception) {
         return emptyList()
     }
-    val files = out.toString().lineSequence()
+    val out = process.inputStream.bufferedReader().readText()
+    // Don't fail build if git returns non-zero; just treat as no diff
+    val files = out.lineSequence()
         .map { it.trim() }
         .filter { it.endsWith(".kt") }
         .toList()
