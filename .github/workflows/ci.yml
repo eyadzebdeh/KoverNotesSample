@@ -25,31 +25,42 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Set up Gradle (cache)
-        uses: gradle/actions/setup-gradle@v3
-
-      - name: Make Gradle wrapper executable (Linux)
-        run: chmod +x ./gradlew
+     - name: Make Gradle wrapper executable (Linux)
+    run: chmod +x ./gradlew || true && chmod +x ./gradlew.sh || true
 
       # Full build runs unit tests and fails the job if tests fail
       - name: Build + unit tests
-        run: ./gradlew build --stacktrace
+       if [ -f ./gradlew ]; then
+      ./gradlew build --stacktrace
+    else
+      ./gradlew.sh build --stacktrace
+    fi fi
 
       # Enforce coverage thresholds on changed files only
       - name: Kover verify (diff-only)
-        run: ./gradlew koverVerify -P line_coverage=80 -P branch_coverage=70 -P only_diff_files=true --stacktrace
+          run: |
+    if [ -f ./gradlew ]; then
+      ./gradlew koverVerify -P line_coverage=80 -P branch_coverage=70 -P only_diff_files=true --stacktrace
+    else
+      ./gradlew.sh koverVerify -P line_coverage=80 -P branch_coverage=70 -P only_diff_files=true --stacktrace
+    fi
+          name: kover-html-report
 
       # Always produce the HTML report so you can inspect it even on failures
       - name: Generate Kover HTML (diff-only)
         if: always()
         run: ./gradlew koverHtmlReport -P only_diff_files=true --stacktrace
 
-      # Upload Kover HTML reports (for all modules)
+        run: |
+    if [ -f ./gradlew ]; then
+      ./gradlew koverHtmlReport -P only_diff_files=true --stacktrace
+    else
+      ./gradlew.sh koverHtmlReport -P only_diff_files=true --stacktrace
+    fi
       - name: Upload Kover HTML artifact
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: kover-html-report
           path: |
             **/build/reports/kover/html/**
           if-no-files-found: warn
