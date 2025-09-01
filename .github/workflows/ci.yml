@@ -1,7 +1,7 @@
 name: CI • Build, Test & Kover
 
 on:
-  pull_request:
+  pull_request_target:
     branches: [ main ]
 
 permissions:
@@ -14,9 +14,11 @@ jobs:
     timeout-minutes: 20
 
     steps:
-      - name: Checkout
+      - name: Checkout PR HEAD (safe for pull_request_target)
         uses: actions/checkout@v4
         with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
 
       - name: Fetch origin/main for diff
@@ -68,10 +70,19 @@ jobs:
             ./gradlew.sh koverXmlReport -P only_diff_files=true --stacktrace
           fi
 
+      - name: List Kover XML files (debug)
+        if: always()
+        run: |
+          echo "Searching for Kover XML reports..."
+          ls -R || true
+          echo "Found XMLs:" || true
+          find . -path "*build/reports/kover/xml/report.xml" -print || true
+
       - name: Comment Kover report on PR
-        if: ${{ github.event_name == 'pull_request' }}
+        if: ${{ github.event_name == 'pull_request_target' }}
         uses: mi-kas/kover-report@v1
         with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           path: |
             **/build/reports/kover/xml/report.xml
           title: "Kover Coverage Report (diff-only)"
