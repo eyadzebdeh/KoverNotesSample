@@ -5,7 +5,7 @@
         android:allowBackup="true"
         android:label="Kover Notes"
         android:supportsRtl="true"
-        android:theme="@style/Theme.Material3.DayNight.NoActionBar">
+        android:theme="@style/Theme.KoverNotes">
         <activity android:name=".presentation.MainActivity" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
