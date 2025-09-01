@@ -4,6 +4,10 @@ on:
   pull_request:
     branches: [ main ]
 
+permissions:
+  contents: read
+  pull-requests: write
+
 jobs:
   build-and-coverage:
     runs-on: ubuntu-latest
@@ -54,6 +58,25 @@ jobs:
           else
             ./gradlew.sh koverHtmlReport -P only_diff_files=true --stacktrace
           fi
+
+      - name: Generate Kover XML (diff-only)
+        if: always()
+        run: |
+          if [ -f ./gradlew ]; then
+            ./gradlew koverXmlReport -P only_diff_files=true --stacktrace
+          else
+            ./gradlew.sh koverXmlReport -P only_diff_files=true --stacktrace
+          fi
+
+      - name: Comment Kover report on PR
+        if: ${{ github.event_name == 'pull_request' }}
+        uses: mi-kas/kover-report@v1
+        with:
+          path: |
+            **/build/reports/kover/xml/report.xml
+          title: "Kover Coverage Report (diff-only)"
+          update-comment: true
+          coverage-type: jacoco
 
       - name: Upload Kover HTML artifact
         if: always()
