@@ -29,19 +29,27 @@ val onlyDiffFlag = (project.findProperty("only_diff_files") as? String)?.toBoole
 extra["koverOnlyDiffFiles"] = onlyDiffFlag ?: false
 
 fun computeDiffIncludedClasses(): List<String> {
-    val out = java.io.ByteArrayOutputStream()
-    try {
-        // Compare current branch to main; prefer origin/main if available
-        exec {
-            // Using triple-dot: changes unique to the current branch compared to main
-            commandLine("git", "diff", "--name-only", "--diff-filter=d", "origin/main")
-            standardOutput = out
-            isIgnoreExitValue = true
+    // Helper to run git diff safely at configuration time without Gradle exec
+    fun runGitDiff(refspec: String): String {
+        return try {
+            val proc = ProcessBuilder(listOf("git", "diff", "--name-only", "--diff-filter=d", refspec))
+                .redirectErrorStream(true)
+                .start()
+            proc.inputStream.bufferedReader().readText()
+        } catch (_: Exception) {
+            ""
         }
-    } catch (_: Exception) {
-        return emptyList()
     }
-    val files = out.toString().lines()
+
+    // Prefer origin/main, fall back to main if origin isn't available
+    val raw = sequenceOf("origin/main", "main")
+        .map { runGitDiff(it) }
+        .firstOrNull { it.isNotBlank() }
+        .orEmpty()
+
+    if (raw.isBlank()) return emptyList()
+
+    val files = raw.lines()
         .filter { it.isNotBlank() }
         .filter { it.endsWith(".kt") }
         .mapNotNull {
@@ -50,9 +58,8 @@ fun computeDiffIncludedClasses(): List<String> {
                 ?.firstOrNull()
                 ?.replace("/", ".")
         }
-        .ifEmpty {
-            listOf("")
-        }
+        .ifEmpty { listOf("") }
+
     return files
 }
 
