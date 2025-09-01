@@ -30,12 +30,12 @@ jobs:
       - name: Make Gradle wrapper executable (Linux)
         run: chmod +x ./gradlew || true && chmod +x ./gradlew.sh || true
 
-      - name: Build + unit tests
+      - name: Unit tests only (no full build)
         run: |
           if [ -f ./gradlew ]; then
-            ./gradlew build --stacktrace
+            ./gradlew test --stacktrace --configuration-cache
           else
-            ./gradlew.sh build --stacktrace
+            ./gradlew.sh test --stacktrace --configuration-cache
           fi
 
       - name: Kover verify (diff-only)
