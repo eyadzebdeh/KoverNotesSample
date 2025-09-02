@@ -2,6 +2,7 @@ package com.example.kovernotes.feature.noteslist
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.FloatingActionButton
@@ -20,7 +21,8 @@ import com.example.kovernotes.domain.model.Note
 @Composable
 fun NotesListScreen(
     viewModel: NotesListViewModel,
-    onNavigateToAdd: () -> Unit
+    onNavigateToAdd: () -> Unit,
+    onNavigateToEdit: (Long) -> Unit
 ) {
     LaunchedEffect(Unit) { viewModel.load() }
     val state by viewModel.state.collectAsState()
@@ -45,7 +47,7 @@ fun NotesListScreen(
             } else {
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     items(state.notes) { note ->
-                        NoteRow(note)
+                        NoteRow(note) { onNavigateToEdit(note.id) }
                     }
                 }
             }
@@ -54,9 +56,13 @@ fun NotesListScreen(
 }
 
 @Composable
-fun NoteRow(note: Note) {
+fun NoteRow(note: Note, onClick: () -> Unit) {
     ElevatedCard(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(12.dp)) {
+        Column(modifier = Modifier
+            .padding(12.dp)
+            .fillMaxWidth()
+            .clickable { onClick() }
+        ) {
             Text(note.title, style = MaterialTheme.typography.titleMedium)
             if (note.content.isNotBlank()) {
                 Spacer(modifier = Modifier.height(4.dp))
