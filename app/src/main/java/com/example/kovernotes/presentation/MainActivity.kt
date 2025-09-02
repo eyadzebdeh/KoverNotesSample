@@ -35,11 +35,22 @@ fun AppNav() {
                     val vm: NotesListViewModel = androidx.hilt.navigation.compose.hiltViewModel()
                     NotesListScreen(
                         viewModel = vm,
-                        onNavigateToAdd = { navController.navigate("add") })
+                        onNavigateToAdd = { navController.navigate("add") },
+                        onNavigateToEdit = { noteId -> navController.navigate("edit/$noteId") }
+                    )
                 }
                 composable("add") {
                     val vm: AddNoteViewModel = androidx.hilt.navigation.compose.hiltViewModel()
                     AddNoteScreen(viewModel = vm, onDone = { navController.popBackStack() })
+                }
+                composable("edit/{id}") {
+                    val vm: com.example.kovernotes.feature.editnote.EditNoteViewModel = androidx.hilt.navigation.compose.hiltViewModel()
+                    val id = it.arguments?.getString("id")?.toLongOrNull() ?: -1L
+                    com.example.kovernotes.feature.editnote.EditNoteScreen(
+                        viewModel = vm,
+                        noteId = id,
+                        onDone = { navController.popBackStack() }
+                    )
                 }
             }
         }
