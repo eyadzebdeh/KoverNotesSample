@@ -116,6 +116,7 @@ dependencies {
     implementation(project(":core:impl"))
     implementation(project(":feature:noteslist"))
     implementation(project(":feature:addnote"))
+    implementation(project(":feature:editnote"))
 
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1")

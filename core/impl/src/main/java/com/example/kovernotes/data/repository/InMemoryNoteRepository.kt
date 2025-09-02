@@ -16,6 +16,14 @@ class InMemoryNoteRepository : NoteRepository {
 
     override fun getNotes(): List<Note> = notes.toList()
 
+    override fun updateNote(id: Long, title: String, content: String): Note {
+        val index = notes.indexOfFirst { it.id == id }
+        if (index == -1) throw IllegalArgumentException("Note with id=$id not found")
+        val updated = Note(id = id, title = title, content = content)
+        notes[index] = updated
+        return updated
+    }
+
     override fun clear() {
         notes.clear()
         nextId = 1L
