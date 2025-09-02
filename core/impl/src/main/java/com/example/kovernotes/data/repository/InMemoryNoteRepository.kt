@@ -8,6 +8,7 @@ class InMemoryNoteRepository : NoteRepository {
     private var nextId = 1L
 
     override fun addNote(title: String, content: String): Note {
+        //TODO: move if statement to usecase and move its related unit tests
         if (title.isBlank()) {
             throw IllegalArgumentException("Title must not be blank")
         }

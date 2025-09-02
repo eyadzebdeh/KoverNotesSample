@@ -8,5 +8,4 @@ class AddNoteUseCase @Inject constructor(private val repository: NoteRepository)
     fun execute(title: String, content: String): Note {
         return repository.addNote(title, content)
     }
-
 }

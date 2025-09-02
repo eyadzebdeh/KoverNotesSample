@@ -30,7 +30,7 @@ jobs:
       - name: Make Gradle wrapper executable (Linux)
         run: chmod +x ./gradlew || true && chmod +x ./gradlew.sh || true
 
-      - name: Unit tests only (no full build)
+      - name: Unit tests
         run: |
           if [ -f ./gradlew ]; then
             ./gradlew test --stacktrace --configuration-cache

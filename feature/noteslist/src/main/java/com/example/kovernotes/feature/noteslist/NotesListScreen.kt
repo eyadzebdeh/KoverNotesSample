@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -33,8 +34,8 @@ fun NotesListScreen(
         ) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Text("Kover Notes", style = MaterialTheme.typography.headlineSmall)
-                androidx.compose.material3.FloatingActionButton(onClick = onNavigateToAdd) {
-                    Text(">")
+                FloatingActionButton(onClick = onNavigateToAdd) {
+                    Text("+")
                 }
             }
             if (state.notes.isEmpty()) {
